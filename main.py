@@ -75,11 +75,11 @@ class Computer():
 		self.cpu = Proccessor(command_list)
 
 
-
-cpu = Proccessor(masm_commands)
-eax = Register('eax')
-ebx = Register('ebx')
-cpu.MOV(ebx, 5)
-cpu.ADD(eax, ebx)
-print(eax)
+if __name__ == "__main__":
+	cpu = Proccessor(masm_commands)
+	eax = Register('eax')
+	ebx = Register('ebx')
+	cpu.MOV(ebx, 5)
+	cpu.ADD(eax, ebx)
+	print(eax)
 
