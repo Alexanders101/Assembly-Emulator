@@ -1,38 +1,72 @@
-import numpy as np
-from main import Component
+from utils import *
 
-max_value = {
-	1 : 255,
-	2 : 65535,
-	3 : 4294967295,
-	4 : 18446744073709551615
-}
-def split_number(number, size):
-	if abs(number) > max_value[size]:
-		raise Exception('{0} is too big for size {1}'.format(number, size))
+class VariableNotInitialized(Exception):
+    pass
 
-	binary = np.binary_repr(number, width=(size*8))[:size*8]
-	print(binary)
-	binary = [binary[curr*8:(curr+1)*8] for curr in range(size)]
-	return [eval('0b{0}'.format(num)) for num in binary]
+class VariableNotDefined(Exception):
+    pass
 
-def combine_number(memory_seg, signed = False):
-	binary = [np.binary_repr(number, width=8) for number in memory_seg]
-	binary = ''.join(binary)
-	if signed:
-		sign, binary = binary[0], binary[1:]
-		sign = -1 if sign == '1' else 1
-	else:
-		sign = 1
-
-	return (sign * eval('0b{0}'.format(binary)))
-
+class VariableAlreadyDefined(Exception):
+	    pass
 
 class Memory(Component):
 	def __init__(self, size):
-		super(Memory, self).__init__('Memory')
-		self.memory = np.zeros((size,), dtype=np.int8)
+		# super(Memory, self).__init__('Memory')
+		Component.__init__(self, 'Memory')
+		self.memory = np.zeros((size,), dtype=np.uint8)
+		self.offset = 0
+		self.variables = {}
 
-x = split_number(255, 2)
-print(x)
-print(combine_number(x,True))
+	def set(self, name, variable=None, size=None, signed=False):
+		if size is None:
+			try:
+				curr, size, signed, init = self.variables[name]
+			except KeyError:
+				raise Exception('A new variable needs size')
+		else:
+			if name in self.variables:
+				raise VariableAlreadyDefined()
+			curr = self.offset
+			self.offset += size
+
+		if variable is None:
+			if name in self.variables:
+				raise VariableAlreadyDefined()
+			init = False
+		else:
+			value = split_number(variable, size)
+			self.memory[curr:curr+size] = value
+			init = True
+
+		self.variables[name] = (curr, size, signed, init)
+	def get(self, name):
+		try:
+			offset, size, signed, init = self.variables[name]
+		except KeyError:
+			raise VariableNotDefined('Variable {0} has not been defined'.format(name))
+
+		if not init:
+			raise VariableNotInitialized('Variable {0} has not been initialized'.format(name))
+
+		value = self.memory[offset:offset+size]
+		return combine_number(value, signed)
+
+	def dell(self, name):
+		try:
+			offset, size, signed, init = self.variables[name]
+		except KeyError:
+			raise VariableNotDefined()
+
+		self.memory[offset:offset+size] = [0]*size
+		del self.variables[name]
+
+
+if __name__ == "__main__":
+	mem = Memory(1024)
+	mem.set('x', size=1)
+	mem.set('x', 5)
+	mem.set('x', mem.get('x') + 5)
+	mem.get('x')
+	mem.get('x')
+
+	mem.dell('x')

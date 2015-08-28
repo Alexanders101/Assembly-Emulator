@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-import numpy as np
-from multipledispatch import dispatch
-from commands import masm_commands
+from utils import *
 
 class VarType():
 	def __init__(self, name, size):
@@ -10,17 +8,16 @@ class VarType():
 		self.bit = size * 8
 
 
-class Component():
-	def __init__(self, name, *args, **xargs):
-		self.name = name
 class Proccessor(Component):
 	def __init__(self, command_list):
 		super(Proccessor, self).__init__('Proccessor')
 		for k, v in command_list.items():
 			setattr(self, k, v)
 
-class Register():
-	def __init__(self, name, use="", size = 32):
+class Register(Component):
+	def __init__(self, name, use="", size = 32, subregisters=None):
+		# super(Register, self).__init__('Register')
+		Component.__init__(self, 'Register')
 		self.name = name
 		self.use = use
 		self.size = size
@@ -68,7 +65,7 @@ class Computer():
           'edi' : Register('edi'),
           'esp' : Register('esp')}
 
-	def __init__(self, command_list='masm'):
+	def __init__(self, mem_size, stack_size, command_list='masm'):
 		if command_list is 'masm':
 			command_list = masm_commands
 
@@ -76,10 +73,10 @@ class Computer():
 
 
 if __name__ == "__main__":
+	from commands import masm_commands
 	cpu = Proccessor(masm_commands)
 	eax = Register('eax')
 	ebx = Register('ebx')
 	cpu.MOV(ebx, 5)
 	cpu.ADD(eax, ebx)
 	print(eax)
-
