@@ -24,11 +24,6 @@ class ADD(Command):
     def __init__(self):
         super(ADD, self).__init__('ADD', 'INSERT HELP')
 
-    @dispatch(Register, int)
-    def __run__(self, destination, source):
-        destination += source
-
-    @dispatch(Variable, int)
     def __run__(self, destination, source):
         destination += source
 
