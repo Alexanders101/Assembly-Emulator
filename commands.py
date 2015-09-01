@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from utils import *
 from register import Register
 from memory import Memory, Variable

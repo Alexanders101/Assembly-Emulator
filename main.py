@@ -6,29 +6,123 @@ from stack import Stack
 from commands import masm_commands
 
 
-class VarType():
+class VarType:
+    """
+    Stores the named information about variable types
 
-    def __init__(self, name, size):
+    ...
+    Parameters
+    ----------
+    name : str
+        Data-type name. This is what the user type ex. WORD
+    size : int
+        Size of data-type in bytes
+    signed : bool
+        Whether or not the variable type should be interpreted as signed
+
+    Attributes
+    ----------
+    name : str
+        Data-type name. This is what the user type ex. WORD
+    size : int
+        Size of data-type in bytes
+    signed : bool
+        Whether or not the variable type should be interpreted as signed
+    bits : int
+        Size of data-type in bits
+    _converted : dict(tuple, str, type)
+        Storage for all of the possible conversions of the data-type
+    type : type
+        Numpy type for the given data-type
+    word : str
+        Same as name
+    det : tuple(int, bool)
+        Contains the size and signed attributes
+
+    """
+    def __init__(self, name, size, signed):
         self.name = name
-        self.byte = size
-        self.bit = size * 8
+        self.bytes = size
+        self.bits = size * 8
+        self.signed = signed
+        self._converted = variable_all(self.bytes, self.signed)
+
+    @property
+    def type(self):
+        return self._converted['type']
+
+    @property
+    def word(self):
+        return self._converted['word']
+
+    @property
+    def det(self):
+        return self._converted['det']
 
 
-class Proccessor(Component):
+class Processor(Component):
+    """
+    Holder type for all processor commands
 
+    ...
+    Parameters
+    ----------
+    command_list : dict
+        List of commands with their callable names as the keys
+    """
     def __init__(self, command_list):
-        super(Proccessor, self).__init__('Proccessor')
+        super(Processor, self).__init__('Processor')
         for k, v in command_list.items():
             setattr(self, k, v)
 
 
-class Computer():
-    vt = {'BYTE': VarType('BYTE', 1),
-          'WORD': VarType('VarType', 2),
-          'DWORD': VarType('DWORD', 4),
-          'QWORD': VarType('QWARD', 8)}
+class Computer:
+    """
+    Simulation superclass
 
-    def __make_registers(self):
+    ...
+    Parameters
+    ----------
+    mem_size : int
+        Size of memory in bytes
+    stack_size : int
+        Size of stack in levels.
+    command_list : str
+        Instruction list to load.
+
+    Attributes
+    ----------
+    cpu : Processor
+        Holds the instructions for the computer.
+    mem : Memory
+        Memory holding variables of the computer.
+    reg : dict(name: Register)
+        Dictionary holding the registers of the computer, indexed by their names.
+    stack : Stack
+        The processor stack.
+    vt : dict(name: VarType)
+        Stores all of the possible variable types for the computer
+    """
+    vt = {
+        'BYTE'  : VarType('BYTE', 1, False),
+        'SBYTE' : VarType('SBYTE', 1, True),
+        'WORD'  : VarType('WORD', 2, False),
+        'SWORD' : VarType('SWORD', 2, True),
+        'DWORD' : VarType('DWORD', 4, False),
+        'SDWORD': VarType('SDWORD', 4, True),
+        'QWORD' : VarType('QWARD', 8, False)
+    }
+
+    @staticmethod
+    def __make_registers():
+        """
+        Creates the 32-bit register set
+
+        ...
+        Returns
+        -------
+        A dictionary of 32 bit registers, indexed by their names.
+        """
         reg = {'eax': Register('eax'),
                'ebx': Register('ebx'),
                'ecx': Register('ecx'),
@@ -60,7 +154,7 @@ class Computer():
         if command_list is 'masm':
             command_list = masm_commands
 
-        self.cpu = Proccessor(command_list)
+        self.cpu = Processor(command_list)
         self.mem = Memory(mem_size)
         self.reg = self.__make_registers()
         self.stack = Stack(stack_size)
